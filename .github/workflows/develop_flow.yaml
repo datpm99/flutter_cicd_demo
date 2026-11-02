@@ -1,0 +1,55 @@
+name: Develop Flow
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.38.1'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Install ios dependencies
+        run: |
+          cd ios
+          pod install --repo-update
+          cd ..
+
+      - name: Auto format the dart code
+        run: dart format .
+
+      - name: Verify the dart code
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze the dart code
+        run: flutter analyze --fatal-warnings
+
+      - name: Run tests
+        run: flutter test
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Build IPA
+        run: flutter build ios --debug --no-codesign
